@@ -1,0 +1,49 @@
+================================================================================
+STAGE 1 DEPLOYMENT & RESEARCH PAPER SUMMARY (.TXT)
+Paper Title : Cambodian License Plate Detection and Recognition
+Model Chosen: YOLOv8s (Stage 1: Vehicle & License Plate Detection)
+Generated At: 2026-11-22 04:16:10
+================================================================================
+
+1. ROBOFLOW SOURCE & DEPLOYMENT DETAILS
+--------------------------------------------------------------------------------
+- Workspace        : ras-workspace-z65a4
+- Project          : license-plate-number-detection-q4q11
+- Dataset Version  : v1 (downloaded in YOLOv8 format)
+- Deployment Call  : version.deploy(model_type="yolov8", model_path=RUN_DIR, filename="weights/best.pt")
+- Run Directory    : /kaggle/working/runs/detect/alpr_stage1/yolov8s_stage1_22nov26
+
+2. MODEL ARCHITECTURE & PAPER NOTES
+--------------------------------------------------------------------------------
+- Backbone/Head    : YOLOv8s (~11.2M parameters, ~28.6 GFLOPs at 640x640, compact weight size ~21.5-22.5 MB)
+- Role in Pipeline : Stage 1 detects vehicles and license plate regions on full-frame traffic scenes,
+                     enabling plate cropping and parent-vehicle association before Stage 2 character/script
+                     recognition.
+- Why YOLOv8s      : Balances stronger localization accuracy (especially on smaller or angled plates
+                     and distant vehicles) against real-time inference speed and straightforward
+                     export/deployment compared to heavier variants or pure nano models.
+
+3. VALIDATION METRICS (best.pt @ 640x640)
+--------------------------------------------------------------------------------
+- Precision (P)    : 91.24%
+- Recall (R)       : 83.93%
+- F1-Score         : 87.43%
+- mAP@50           : 90.55%
+- mAP@50-95        : 72.09%
+- Speed (ms/img)   : preprocess=0.84 ms | inference=12.71 ms | postprocess=0.87 ms
+
+4. WHAT TO RECORD FOR YOUR ACM PAPER
+--------------------------------------------------------------------------------
+- Methodology (Sec. 3): Document dataset version (v1), image counts, class list, preprocessing/
+  augmentation settings, input resolution (640x640), epochs/batch size, and vehicle-plate cropping logic.
+- Results & Tables (Sec. 4): Fill Table 2 / Table 3 with Precision, Recall, F1, mAP@50, mAP@50-95,
+  model weight size, and latency/FPS; attach results.png (training curves) and
+  confusion_matrix_normalized.png / val_batch0_pred.jpg (error & qualitative analysis).
+- Deployment / Reproducibility: Record exact Ultralytics/PyTorch versions, GPU hardware, and
+  Roboflow workspace/project/version IDs.
+
+5. SAVED ARTIFACTS IN BUNDLE
+--------------------------------------------------------------------------------
+- Included files   : weights/best.pt, weights/last.pt, results.png, results.csv, confusion_matrix_normalized.png, confusion_matrix.png, BoxPR_curve.png, BoxF1_curve.png, BoxP_curve.png, BoxR_curve.png, labels.jpg, args.yaml, val_batch0_pred.jpg, val_batch1_pred.jpg, val_batch0_labels.jpg, stage1_yolov8s_best.onnx
+- Missing files    : None
+================================================================================
