@@ -1,0 +1,107 @@
+================================================================================
+STAGE 2 MODEL CARD & RESEARCH PAPER SUMMARY
+Project: Cambodian License Plate Detection and Recognition (Two-Stage ALPR)
+Run Name: recognizeV8_yolov8s21Nov26
+Generated: 2026-11-21 12:19:04
+================================================================================
+
+1. ROBOFLOW & DATASET METADATA
+--------------------------------------------------------------------------------
+- Roboflow Workspace : ra-daro
+- Roboflow Project   : cambodia-plate-number-recognition
+- Dataset Version    : v10 (v10 recognizeV8)
+- Total Images       : 10,603 cropped license plate images (3x offline aug.)
+  * Training Set     : 9,810 images (93%), 0 backgrounds, 0 corrupt
+  * Validation Set   : 793 images (7%), 6,022 labeled instances
+  * Auto-cleaned     : 9 duplicate labels removed in train; 6 removed in val
+- Number of Classes  : 76 (Arabic digits 0-9, Latin A-Z, punctuation '-', '.',
+                       Khmer provincial codes, PP, Phnom Penh, Police, State,
+                       RCAF, CD, NEC, ONG, OI, Cambodia, Right_Hand_Drive, kha_mor)
+- Preprocessing      : Auto-Orient, 640x640 Stretch
+- Offline Augment.   : Rotation +/-15 deg, Shear +/-13 deg H / +/-11 deg V,
+                       Brightness +/-25%, Blur <= 4.5 px, Noise <= 1.6%
+
+2. MODEL ARCHITECTURE & HARDWARE ENVIRONMENT
+--------------------------------------------------------------------------------
+- Architecture       : YOLOv8s (pretrained yolov8s.pt, nc=80 -> 76; 349/355 items transferred)
+- Unfused Model      : 129 layers | 11,165,012 parameters | 28.8 GFLOPs
+- Fused Model (Val)  : 72 layers  | 11,154,996 parameters | 28.6 GFLOPs
+- Weight Size        : 22.6 MB (stripped best.pt)
+- Hardware           : NVIDIA Tesla T4 GPU (14,912 MiB VRAM), Kaggle
+- Peak GPU Memory    : ~7.12 GB
+- Software Stack     : Python 3.13.16 | PyTorch 2.11.0+cu130 | Ultralytics 8.4.216
+
+3. TRAINING CONFIGURATION (ANTI-DISTORTION PROTOCOL)
+--------------------------------------------------------------------------------
+- Configured Epochs  : 100 (EarlyStopping patience=20)
+- Actual Stop Epoch  : Epoch 76 (early stopped; no improvement for 20 epochs)
+- Best Checkpoint    : Epoch 56 (weights/best.pt)
+- Total Train Time   : 3.267 hours (~2m 27s per epoch)
+- Input Resolution   : 640 x 640
+- Batch Size         : 32
+- Optimizer          : Auto -> MuSGD (lr0=0.01, momentum=0.9, weight_decay=0.0005)
+- Mixed Precision    : AMP enabled (True), Deterministic=True, Seed=0
+- Online Augment.    : fliplr=0.0, flipud=0.0 (CRITICAL: preserves glyph/Khmer orientation)
+                       degrees=0.0, shear=0.0 (avoids double distortion)
+                       mosaic=0.5, close_mosaic=15 (sharp final convergence)
+                       hsv_h=0.015, hsv_s=0.7, hsv_v=0.4, scale=0.5, translate=0.1, erasing=0.4
+
+4. FINAL VALIDATION RESULTS (best.pt @ Epoch 56 | 793 Images | 6,022 Instances)
+--------------------------------------------------------------------------------
+- Precision (P)      : 95.9% (0.959)
+- Recall (R)         : 95.5% (0.955)
+- F1-Score           : 95.7% (0.957)  [2 * 0.959 * 0.955 / (0.959 + 0.955)]
+- mAP@50             : 97.3% (0.973)
+- mAP@50-95          : 85.5% (0.855)
+- Inference Speed    : 7.2 ms/plate total on Tesla T4 (~138.9 FPS)
+  * Preprocess       : 0.2 ms
+  * Forward Pass     : 6.0 ms (~166.7 FPS inference-only)
+  * Postprocess (NMS): 1.0 ms
+
+5. PER-CLASS HIGHLIGHTS FOR PAPER ANALYSIS (SECTION 4.3 & 4.4 ERROR ANALYSIS)
+--------------------------------------------------------------------------------
+[A] Strongest Categories (mAP@50):
+  - Digits 0-9       : 98.0% to 99.5% across all ten digits (2: 99.5%, 4 & 9: 99.1%, 0: 99.0%)
+  - Major Provinces  : Phnom Penh (98.3%, n=71), Battambang (99.5%, n=19),
+                       Siem Reap (99.5%, n=17), Kandal (99.5%, n=18), Kampong Cham (99.5%, n=18)
+  - Special Plates   : RCAF (99.5%, n=21), Police (99.5%, n=19), State (99.5%, n=8),
+                       PP (99.5%, n=7), ONG (99.5%, n=6), NEC (99.5%, n=1), Cambodia (96.5%, n=55)
+
+[B] Challenging / Lower-Performing Classes (Cite directly in Section 4.4 Error Analysis):
+  1. Visually similar alphanumerics:
+     - 'O' : 89.1% mAP@50 (P=89.4%, R=84.0%, n=50) -> confused with '0' and 'Q'
+     - 'Q' : 96.3% mAP@50 (P=82.0%, R=100%, n=23)  -> lower precision due to O/0/Q overlap
+     - 'I' : 95.6% mAP@50 (P=98.2%, R=92.5%, n=59) -> confused with '1'/'T'
+  2. Rare / underrepresented characters & provinces:
+     - 'X' : 85.5% mAP@50 (P=86.8%, R=85.7%, n=7)
+     - 'J' : 91.3% mAP@50 (P=82.4%, R=83.3%, n=12)
+     - 'Pailin' : 85.9% mAP@50, 72.8% mAP@50-95 (n=12)
+     - 'Preah Sihanouk' : 94.2% mAP@50 (P=79.2%, R=83.3%, n=6)
+     - 'Takeo' : 92.1% mAP@50 (P=100%, R=83.6%, n=18)
+     - 'CD' (Diplomatic) : 91.5% mAP@50 (P=98.0%, R=91.7%, n=12)
+  3. Dense Khmer / specialized labels:
+     - 'Right_Hand_Drive' : 86.5% mAP@50, 71.0% mAP@50-95 (P=100%, R=80.5%, n=15)
+  4. Tiny punctuation boxes (high detection, sensitive IoU at stricter thresholds):
+     - '-' : 95.5% mAP@50, 59.1% mAP@50-95 (P=96.5%, R=85.9%, n=702)
+     - '.' : 98.9% mAP@50, 59.5% mAP@50-95 (P=97.1%, R=92.9%, n=56)
+
+6. EXACT VALUES TO INSERT INTO ACM RESEARCH PAPER
+--------------------------------------------------------------------------------
+- Abstract & Table 3 (Stage 2):
+    Precision = 95.9%, Recall = 95.5%, F1 = 95.7%, mAP@50 = 97.3%, mAP@50-95 = 85.5%
+    Stage 2 Latency = 7.2 ms/plate (6.0 ms inference) on Tesla T4 | Size = 22.6 MB
+- Section 4.1 (Experimental Setup):
+    NVIDIA Tesla T4 (14.9 GB VRAM), Python 3.13.16, PyTorch 2.11.0, Ultralytics 8.4.216,
+    MuSGD optimizer (lr0=0.01, momentum=0.9), mosaic=0.5, close_mosaic=15,
+    early stopped at Epoch 76 (best checkpoint at Epoch 56, 3.267 h).
+- Still needed from End-to-End Test Script (on unseen full traffic images):
+    [ ] End-to-End Exact Plate Match Accuracy (%)
+    [ ] Stage 1 Latency (ms) & Combined End-to-End FPS
+    [ ] End-to-End Qualitative Grid Images for Figure 3
+
+7. SAVED ARTIFACTS CHECKLIST
+--------------------------------------------------------------------------------
+Copied files : weights/best.pt, weights/last.pt, results.png, results.csv, confusion_matrix_normalized.png, confusion_matrix.png, BoxPR_curve.png, BoxF1_curve.png, BoxP_curve.png, BoxR_curve.png, labels.jpg, args.yaml, val_batch0_pred.jpg, val_batch1_pred.jpg, val_batch2_pred.jpg, val_batch0_labels.jpg
+Missing files: None
+Extra export : best_stage2_yolov8s.onnx
+================================================================================
